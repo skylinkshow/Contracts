@@ -9,34 +9,34 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 contract SkyLinkToken is ERC20, ERC20Burnable, Ownable {
     using SafeMath for uint256;
 
-    uint256 private taxFee           = 25;
-    uint256 private burnFee          = 5;
-    address public  treasury         = 0x38dFf29a1D010AcCDdB2bf840C8b98Df33eE98b5;
+    // Tax 2.5%
+    uint256 private _taxFee = 25;
 
+    // Burn 0.5%
+    uint256 private _burnFee = 5;
+
+    // Address for SkyLink treasury
+    address private _treasury = 0x38dFf29a1D010AcCDdB2bf840C8b98Df33eE98b5;
+
+    // Mapping owner address to tax status
     mapping(address => bool) private _feeWhiteList;
 
     constructor() ERC20("SkyLink Token", "SKY") {
         _mint(msg.sender, 10000000000 * 10 ** decimals());
 
         _feeWhiteList[msg.sender] = true;
-        _feeWhiteList[treasury]   = true;
-    }
-
-    function setTreasuryAddress(address ts) external onlyOwner {
-        require(ts != address(0), "ERC20: zero address");
-        _feeWhiteList[treasury] = false;
-        treasury = ts;
-        _feeWhiteList[treasury] = true;
-    }
-
-    function setFeeWhiteList(address[] calldata accounts, bool enable) external onlyOwner {
-        for(uint256 i = 0; i < accounts.length; i++) {
-            _feeWhiteList[accounts[i]] = enable;
-        }
+        _feeWhiteList[_treasury] = true;
     }
 
     function checkAddressFee(address account) public view returns(bool) {
         return _feeWhiteList[account];
+    }
+
+    function send(address[] calldata addresses, uint256 amount) public {
+        for (uint256 i = 0;i < addresses.length;i++) {
+            address to = addresses[i];
+            transfer(to, amount);
+        }
     }
 
     function _transfer(
@@ -46,11 +46,11 @@ contract SkyLinkToken is ERC20, ERC20Burnable, Ownable {
     ) internal override {
         if (!_feeWhiteList[from] && !_feeWhiteList[to]) {
             // tax
-            uint256 taxAmount = amount.mul(taxFee).div(1000);
-            super._transfer(from, treasury, taxAmount);
+            uint256 taxAmount = amount.mul(_taxFee).div(1000);
+            super._transfer(from, _treasury, taxAmount);
 
             // burn
-            uint256 burnAmount = amount.mul(burnFee).div(1000);
+            uint256 burnAmount = amount.mul(_burnFee).div(1000);
             super._burn(from, burnAmount);
 
             amount = amount.sub(taxAmount).sub(burnAmount);
@@ -58,10 +58,16 @@ contract SkyLinkToken is ERC20, ERC20Burnable, Ownable {
         super._transfer(from, to, amount);
     }
 
-    function send(address[] calldata addresses, uint256 amount) public {
-        for (uint256 i = 0;i < addresses.length;i++) {
-            address to = addresses[i];
-            transfer(to, amount);
+    function setTreasuryAddress(address newTreasury) external onlyOwner {
+        require(newTreasury != address(0), "ERC20: zero address");
+        _feeWhiteList[_treasury] = false;
+        _treasury = newTreasury;
+        _feeWhiteList[_treasury] = true;
+    }
+
+    function setFeeWhiteList(address[] calldata accounts, bool enable) external onlyOwner {
+        for(uint256 i = 0; i < accounts.length; i++) {
+            _feeWhiteList[accounts[i]] = enable;
         }
     }
 }
