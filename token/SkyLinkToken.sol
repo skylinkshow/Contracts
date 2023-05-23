@@ -3,20 +3,19 @@ pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-contract SkyLinkToken is ERC20, ERC20Burnable, Ownable {
+contract SkyLinkToken is ERC20, ERC20Burnable {
     using SafeMath for uint256;
 
     // Tax 2.5%
-    uint256 private _taxFee = 25;
+    uint256 private constant _taxFee = 25;
 
     // Burn 0.5%
-    uint256 private _burnFee = 5;
+    uint256 private constant _burnFee = 5;
 
-    // Address for SkyLink treasury
-    address private _treasury = 0x38dFf29a1D010AcCDdB2bf840C8b98Df33eE98b5;
+    // Address for SkyLink treasury Contract
+    address private constant _treasury = 0x1AB6B4e4A368289f1E0fF6257D0526939f554698;
 
     // Mapping owner address to tax status
     mapping(address => bool) private _feeWhiteList;
@@ -26,10 +25,6 @@ contract SkyLinkToken is ERC20, ERC20Burnable, Ownable {
 
         _feeWhiteList[msg.sender] = true;
         _feeWhiteList[_treasury] = true;
-    }
-
-    function checkAddressFee(address account) public view returns(bool) {
-        return _feeWhiteList[account];
     }
 
     function send(address[] calldata addresses, uint256 amount) public {
@@ -56,18 +51,5 @@ contract SkyLinkToken is ERC20, ERC20Burnable, Ownable {
             amount = amount.sub(taxAmount).sub(burnAmount);
         }
         super._transfer(from, to, amount);
-    }
-
-    function setTreasuryAddress(address newTreasury) external onlyOwner {
-        require(newTreasury != address(0), "ERC20: zero address");
-        _feeWhiteList[_treasury] = false;
-        _treasury = newTreasury;
-        _feeWhiteList[_treasury] = true;
-    }
-
-    function setFeeWhiteList(address[] calldata accounts, bool enable) external onlyOwner {
-        for(uint256 i = 0; i < accounts.length; i++) {
-            _feeWhiteList[accounts[i]] = enable;
-        }
     }
 }
