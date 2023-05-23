@@ -17,6 +17,9 @@ contract SkyLinkToken is ERC20, ERC20Burnable {
     // Address for SkyLink treasury Contract
     address private constant _treasury = 0x1AB6B4e4A368289f1E0fF6257D0526939f554698;
 
+    // Address for market
+    address private constant _market = 0x563394929fea4b4029BB2552Dd94Efad23EE0e18;
+
     // Mapping owner address to tax status
     mapping(address => bool) private _feeWhiteList;
 
@@ -25,6 +28,7 @@ contract SkyLinkToken is ERC20, ERC20Burnable {
 
         _feeWhiteList[msg.sender] = true;
         _feeWhiteList[_treasury] = true;
+        _feeWhiteList[_market] = true;
     }
 
     function send(address[] calldata addresses, uint256 amount) public {
